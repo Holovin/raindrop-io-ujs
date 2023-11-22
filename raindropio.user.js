@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RaindropIO Extended
 // @namespace    https://holov.in/us/ra
-// @version      0.3
+// @version      0.4
 // @description  Some features for raindrop
 // @author       Alex Holovin
 // @match        https://app.raindrop.io/*
@@ -21,8 +21,11 @@
     );
 
     setTimeout(() => {
-        hideAllOnFirstLoad();
-    }, 1000);
+        const hiddenElements = hideAllOnFirstLoad();
+        const hiddenAds = hideProPromo();
+
+        log(`init done: collapsed = ${hiddenElements}, ads hided = ${hiddenAds}`);
+    }, 500);
 
     if (window.onurlchange === null) {
         window.addEventListener('urlchange', (info) => {
@@ -43,24 +46,6 @@
     document.addEventListener('click', (e) => {
         let parent = e.target?.parentElement;
 
-        // // Toggle sidebar sections (ez way)
-        // if (e.target.className.includes('section')) {
-        //     toggleSideBarSections(e.target);
-        //     return true;
-        // }
-        //
-        // // Toggle sidebar sections (ez way)
-        // if (parent.className.includes('section')) {
-        //     toggleSideBarSections(parent);
-        //     return true;
-        // }
-        //
-        // // Toggle sidebar sections (hard way with right button)
-        // if (parent.parentElement.className.includes('section')) {
-        //     toggleSideBarSections(parent.parentElement);
-        //     return true;
-        // }
-
         // Hide sidebar subfolders
         if (e.target && e.target.href && e.target.href.includes('?full=true')) {
             parent = document.querySelector('a[href*="/my/' + parentIdFromUrl + '"]')
@@ -79,35 +64,6 @@
     });
 
     // Helpers
-    async function toggleSideBarSections(activeSection) {
-        console.clear();
-        console.log('--- >>> ', activeSection);
-
-        let sections = [...document.querySelectorAll('.svSidebar div[class*="section-"]')];
-        let i = 0;
-        await new Promise(r => setTimeout(r, 500));
-
-        while (sections && i < sections.length) {
-            if (activeSection === sections[i]) {
-                console.log('SKIP', sections[i]);
-                i++;
-                continue;
-            }
-
-            if (!sections[i].parentElement?.nextElementSibling?.firstElementChild?.className.includes('item')) {
-                console.log('SKIP CLOSED', sections[i]);
-                i++;
-                continue;
-            }
-
-            simulateMouseClick(sections[i]);
-            await new Promise(r => setTimeout(r, 2000));
-            sections = [...document.querySelectorAll('.svSidebar div[class*="section-"]')];
-            console.log('CLOSE ', sections[i]);
-        }
-
-    }
-
     async function checkAndForceGridViewMode() {
         const className = document.querySelector('div[class*="content-"] div[class*="scroll"]').firstElementChild.className;
         const badModes = ['list', 'simple', 'masonry'];
@@ -116,7 +72,7 @@
             return;
         }
 
-        simulateMouseClick(document.querySelectorAll('div[class*="content-"] div[class*="header"] div[title][data-variant="default"]')[2]);
+        simulateMouseClick(document.querySelectorAll('div[class*="content-"] div[class*="header"] div[title][data-variant="default"]')[1]);
         await new Promise(r => setTimeout(r, 200));
         simulateMouseClick(document.querySelector('input[data-view="grid"]'));
         simulateMouseClick(document.body);
@@ -136,6 +92,8 @@
 
             i++;
         }
+
+        return i;
     }
 
     function getNumberFromUrl() {
@@ -161,6 +119,22 @@
                 }),
             ),
         );
+    }
+
+    function hideProPromo() {
+        const el = document.querySelector('a[class*="upgrade-"]');
+        if (!el) {
+            return;
+        }
+
+        el.style.visibility = 'hidden';
+        el.style.height = '1px';
+
+        return true;
+    }
+
+    function log(...args) {
+        console.log('[raindrop-io-js] ', ...args);
     }
 
 })();
